@@ -1,0 +1,17 @@
+langchain-groq
+langchain
+python-dotenv
+langchain-community 
+streamlit
+langchain-huggingface
+langchain-core
+langchain-text-splitters
+ipykernel
+dotenv
+langchain
+
+#chabot with langgraph
+langgraph
+# langchain
+langsmith
+langchain_tavily
