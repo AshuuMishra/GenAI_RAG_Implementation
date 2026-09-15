@@ -14,4 +14,4 @@ langchain
 langgraph
 # langchain
 langsmith
-langchain_tavily
+langchain_tavilyu
