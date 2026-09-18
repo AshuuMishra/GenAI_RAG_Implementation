@@ -8,10 +8,15 @@ langchain-core
 langchain-text-splitters
 ipykernel
 dotenv
-langchain
+
 
 #chabot with langgraph
 langgraph
+
 # langchain
 langsmith
 langchain_tavilyu
+
+#for mcp 
+langchain-mcp-adapter
+mcp
