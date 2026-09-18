@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # langsmith tracking
+groq_api_key = os.getenv("GROQ_API_KEY")
 os.environ["LANGCHAIN_API_KEY"]=os.getenv("LANGCHAIN_API_KEY")
 os.environ["LANGCHAIN_TRACING"]="TRUE"
 os.environ["LANGCHAIN_PROJECT"]="Q&A Chatbot with GroqAPI"
@@ -22,7 +23,7 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 def generate_response(question, llm , api_key , temperature , max_tokens ):
-    api_key=ChatGroq.groq_api_key
+    api_key=groq_api_key
     llm = ChatGroq(model=llm)
     output_parsers = StrOutputParser()
     chain = prompt | llm | output_parsers
@@ -42,3 +43,13 @@ llm=st.sidebar.selectbox("Select an Groq AI Model",["openai/gpt-oss-120b","opena
 # adjust response parameter
 temperature=st.sidebar.slider("Temperature",max_value=1.0, min_value=0.0)
 max_tokens=st.sidebar.slider("Max Tokens",max_value=50, min_value=100)
+
+#main interface for users
+st.write("Go Ahead and Start Exploring your Ideas")
+user_input = st.text_input("You :")
+
+if user_input:
+    response = generate_response(user_input ,llm  ,api_key, temperature , max_tokens)
+    st.write(response)
+else:
+    st.write("Kuch toh likh loudu")
