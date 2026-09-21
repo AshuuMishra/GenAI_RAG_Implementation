@@ -4,7 +4,9 @@ import streamlit as st
 
 from langchain_groq import ChatGroq
 
-from langchain_community.document_loaders import PyPDFDirectoryLoader
+# from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_community.document_loaders import PyPDFLoader
+
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -48,10 +50,13 @@ prompt = ChatPromptTemplate.from_template(
 def create_vectore_embedding():
     if "vector" not in st.session_state:
         st.session_state.embedding = HuggingFaceEmbeddings()
-        st.session_state.loader = PyPDFDirectoryLoader(r"C:\Users\CloudJournee\Desktop\python\python\langchain_update\GenAI_RAG_Implementation\attention.pdf")  #data ingestion step
+        # st.session_state.loader = PyPDFDirectoryLoader(r"C:\Users\CloudJournee\Desktop\python\python\langchain_update\GenAI_RAG_Implementation\attention.pdf")  #data ingestion step
+        st.session_state.loader = PyPDFLoader(r"C:\Users\CloudJournee\Desktop\python\python\langchain_update\GenAI_RAG_Implementation\attention.pdf")  #data ingestion step
         st.session_state.docs = st.session_state.loader.load()  #document loader
         st.session_state.text_splitter=RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
         st.session_state.final_documents=st.session_state.text_splitter.split_documents(st.session_state.docs[:50])
+        st.write("Number of loaded pages:", len(st.session_state.docs))
+        st.write("Number of chunks:", len(st.session_state.final_documents))
         st.session_state.vector=FAISS.from_documents(st.session_state.final_documents,st.session_state.embedding)
 
 
