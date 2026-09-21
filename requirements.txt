@@ -8,7 +8,10 @@ langchain-core
 langchain-text-splitters
 ipykernel
 dotenv
-
+sentence_transformers
+faiss-cpu
+torchvision
+pypdf
 
 #chabot with langgraph
 langgraph
