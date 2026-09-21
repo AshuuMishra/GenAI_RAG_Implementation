@@ -78,11 +78,26 @@ if user_prompt:
             "input" : RunnablePassthrough()
         
         }
-        | prompt | llm | StrOutputParser
+        | prompt | llm | StrOutputParser()
     )
 
     start = time.process_time()
-    response = retrival.invoke({"input" :user_prompt})
+    response = retrival.invoke(user_prompt)
     print(f"Response time :{time.process_time() - start}")
 
-    st.write(response["answer"])
+    st.write(response)
+
+
+# user_prompt: string
+#        ↓
+#        ├── retriever → context
+#        │
+#        └── RunnablePassthrough() → input
+#                          ↓
+#                        prompt
+#                          ↓
+#                          llm
+#                          ↓
+#                   StrOutputParser()
+#                          ↓
+#                     string answer
