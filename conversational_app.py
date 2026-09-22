@@ -85,10 +85,11 @@ if api_key:
     text_splitter= RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
     splits=text_splitter.split_documents(documents)
     # vectorstore = Chroma.from_documents(documents=splits ,embedding = embedding)
-    vectorstore = FAISS.from_documents(documents=splits ,embedding = embedding)
 
     st.write("Number of documents:", len(documents))
     st.write("Number of splits:", len(splits))
+
+    vectorstore = FAISS.from_documents(documents=splits ,embedding = embedding)
 
     retriever = vectorstore.as_retriever()
 
