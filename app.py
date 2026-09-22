@@ -1,6 +1,5 @@
-from openai import api_key
 from langchain_core import output_parsers
-import groq
+# import groq
 from langchain_core.messages import SystemMessage
 import streamlit as st
 from langchain_groq import ChatGroq
@@ -23,9 +22,9 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 def generate_response(question, llm , api_key , temperature , max_tokens ):
-    api_key=groq_api_key
+    groq_api_key = api_key 
     llm = ChatGroq(model=llm)
-    output_parsers = StrOutputParser()
+    output_parsers = StrOutputParser()   #a chat model normally return an AI message object
     chain = prompt | llm | output_parsers
     answer = chain.invoke({"question":question})
     return answer
