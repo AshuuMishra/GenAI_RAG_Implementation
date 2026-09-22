@@ -72,14 +72,14 @@ if api_key:
     documents= []
     #process uploaded pdf
     for file in files:
-        
+
         file_path = file.name
 
         with open(file_path, "wb") as f:
             f.write(file.getbuffer())
     
 
-        loader=PyPDFLoader("uploaded_files.pdf")
+        loader=PyPDFLoader(file_path)
         docs = loader.load()
         documents.extend(docs)
 
