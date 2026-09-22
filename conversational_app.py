@@ -1,5 +1,4 @@
 #RAG Conversational with PDF INcluding Chat history
-from langchain_core.chat_history import BaseChatMessageHistory
 import os 
 import uuid
 
@@ -11,14 +10,22 @@ from langchain_groq import ChatGroq
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma,FAISS
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from langchain_classic.chains import create_history_aware_retriever
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_classic.chains import create_retrieval_chain
+
+from langchain_core.chat_history import BaseChatMessageHistory , InMemoryChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate
-from lanchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnableWithMessageHistory
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.messages import HumanMessage,AIMessage
+
+
+
+
 
 # environment variable
 load_dotenv()
@@ -35,7 +42,9 @@ os.environ["LANGCHAIN_PROJECT"]="RAG Document Q&A with GroqAPI"
 
 #embedding models
 embedding = HuggingFaceEmbeddings(
-    model_name='all-MiniLM-L6-v2'
+    # model_name='all-MiniLM-L6-v2'
+    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
 )
 
 #STREAMLIT APP SETUP
@@ -48,6 +57,7 @@ api_key = st.text_input("Enter your groq api Key", type ="password")
 
 files = st.file_uploader("choose a pdf file", type="pdf",accept_multiple_files=True)
 
+
 #check if groq api key is provided
 if api_key:
     llm = ChatGroq(groq_api_key=api_key,model="openai/gpt-oss-20b")
@@ -59,11 +69,9 @@ if api_key:
     if "store" not in st.session_state:
         st.session_state.store={}  
 
-
+    documents= []
     #process uploaded pdf
     for file in files:
-
-        documents= []
 
         with open("uploaded_files.pdf","wb") as f:
             f.write(file.getbuffer())
@@ -76,7 +84,12 @@ if api_key:
     #split and create embedding for the documents
     text_splitter= RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
     splits=text_splitter.split_documents(documents)
-    vectorstore = Chroma.from_documents(documents=splits ,embedding = embedding)
+    # vectorstore = Chroma.from_documents(documents=splits ,embedding = embedding)
+    vectorstore = FAISS.from_documents(documents=splits ,embedding = embedding)
+
+    st.write("Number of documents:", len(documents))
+    st.write("Number of splits:", len(splits))
+
     retriever = vectorstore.as_retriever()
 
 
@@ -107,10 +120,16 @@ if api_key:
     #question Rewritter for reframming the contexual aware question 
     # Understand/rewrite the question.
 
-    question_rewritter= (
-        contextualize_q_prompt 
-        | llm 
-        | StrOutputParser() 
+    # question_rewritter= (
+    #     contextualize_q_prompt 
+    #     | llm 
+    #     | StrOutputParser() 
+    #     )
+
+    history_aware_retriever = create_history_aware_retriever(
+        llm,
+        retriever,
+        contextualize_q_prompt
         )
 
     #asnwer question
@@ -139,41 +158,64 @@ if api_key:
         ]
     )
 
-    question_answer_chain=(
-        qa_prompt
-        | llm
-        | StrOutputParser()
+    question_answer_chain=create_stuff_documents_chain(
+        llm,
+        qa_prompt,
         )
 
-    #Combining the question rewritter as well the question answer chain 
-    Rag_chain= (question_rewritter | question_answer_chain)
-
-    def get_session_history(session:str)->BaseChatMessageHistory:
-        if session_id not in st.session_state.store:
-            st.session_state.store[session_id]=ChatMessageHistory()
-        return st.session_state.store[session_id]
-
-    conversational_rag_chain=RunnableWithMessageHistory(
-
-        rag_chain,get_session_history,
-        input_messages_key="input",
-        history_messages_key="chathistory",
-        output_messages_key="answer"
+    #Combining the histroy_aware_retrieval as well the question answer chain 
+    rag_chain = create_retrieval_chain(
+        history_aware_retriever,
+        question_answer_chain
     )
 
-    user_input = st.text_input("Your question:")
-    if user_input:
-        session_history=get_session_history(session_id)
-        response = conversational_rag_chain.invoke (
-            {"input":user_input},
-            config = {
-                "configurable":{"session_id":session_id}
-            },
 
+    def get_session_histroy(session : str )-> BaseChatMessageHistory:
+
+        if session not in st.session_state.store:
+            st.session_state.store[session] = InMemoryChatMessageHistory()
+
+        return st.session_state.store[session]
+
+
+    conversational_rag_chain = RunnableWithMessageHistory(
+        rag_chain,
+        get_session_histroy,
+        input_messages_key="input",
+        history_messages_key="chat_history",
+        output_messages_key="answer"
+        
+    )
+
+
+
+    user_input = st.chat_input("Ask question about your pdf :")
+
+    if user_input:
+
+        response = conversational_rag_chain.invoke(
+            {"input" : user_input},
+            config ={"configurable":{"session_id":session_id}}
         )
-        st.write(st.session_state.store)
-        st.success("assistant:", response["answer"])
-        st.write("chat history", session_history.messages)
+
+        st.write(response['answer'])
+        
+        # Display chat history
+    if session_id in st.session_state.store:
+
+        session_history = st.session_state.store[session_id]
+
+        for message in session_history.messages:
+
+            if message.type == "human":
+                st.chat_message("user").write(message.content)
+
+            elif message.type == "ai":
+                st.chat_message("assistant").write(message.content)
+#         )
+#         st.write(st.session_state.store)
+#         st.success("assistant:", response["answer"])
+#         st.write("chat history", session_history.messages)
 
 else :
     st.warning("please enter the groq api key ")
