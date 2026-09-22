@@ -36,7 +36,7 @@ groq_api_key = os.getenv("GROQ_API_KEY")
 
 # langsmith tracking
 os.environ["LANGCHAIN_API_KEY"]=os.getenv("LANGCHAIN_API_KEY")
-os.environ["LANGCHAIN_TRACING"]="TRUE"
+os.environ["LANGCHAIN_TRACING_V2"]="TRUE"
 os.environ["LANGCHAIN_PROJECT"]="RAG Document Q&A with GroqAPI"
 
 
