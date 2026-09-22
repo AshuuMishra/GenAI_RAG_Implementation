@@ -18,7 +18,8 @@ langgraph
 
 # langchain
 langsmith
-langchain_tavilyu
+langchain_tavily
+
 
 #for mcp 
 langchain-mcp-adapter
