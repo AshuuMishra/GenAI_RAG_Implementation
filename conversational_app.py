@@ -60,7 +60,7 @@ files = st.file_uploader("choose a pdf file", type="pdf",accept_multiple_files=T
 
 #check if groq api key is provided
 if api_key:
-    llm = ChatGroq(groq_api_key=api_key,model="openai/gpt-oss-20b")
+    llm = ChatGroq(groq_api_key=groq_api_key,model="openai/gpt-oss-20b")
 
     #chat interfrace
     session_id = st.text_input("session ID ", value = "default_session")
