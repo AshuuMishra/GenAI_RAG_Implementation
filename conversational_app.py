@@ -86,6 +86,11 @@ if api_key:
     splits=text_splitter.split_documents(documents)
     # vectorstore = Chroma.from_documents(documents=splits ,embedding = embedding)
 
+    st.write("Number of documents:", len(documents))
+
+    for i, doc in enumerate(documents):
+        st.write("Page", i, "text length:", len(doc.page_content))
+
     st.write("First page text:", documents[0].page_content[:500])
 
     st.write("Number of documents:", len(documents))
