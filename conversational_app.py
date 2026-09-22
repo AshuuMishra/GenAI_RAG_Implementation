@@ -1,4 +1,5 @@
 #RAG Conversational with PDF INcluding Chat history
+from langchain_core.chat_history import BaseChatMessageHistory
 import os 
 import uuid
 
@@ -45,6 +46,8 @@ st.write("Upload a PDF and chat with its content")
 #input thr groq api key
 api_key = st.text_input("Enter your groq api Key", type ="password")
 
+files = st.file_uploader("choose a pdf file", type="pdf",accept_multiple_files=True)
+
 #check if groq api key is provided
 if api_key:
     llm = ChatGroq(groq_api_key=api_key,model="openai/gpt-oss-20b")
@@ -56,73 +59,94 @@ if api_key:
     if "store" not in st.session_state:
         st.session_state.store={}  
 
-    uploaded_files = st.file_uploader("choose a pdf file", type="pdf",accept_multiple_files=True)
 
-    #process upladed pdf 
-    if uploaded_files:
-        documents =[]
-        for uploaded_file in uploaded_files:
-            temppdf=f"./temp.pdf"
-            with open(temppdf,"wb") as file:
-                file.write(uploaded_file.getvalue())
-                file_name = uploaded_file.name
+    #process uploaded pdf
+    for file in files:
 
-            loader=PyPDFLoader(temppdf)
+        documents= []
+
+        with open("uploaded_files.pdf","wb") as f:
+            f.write(file.getbuffer())
+    
+
+            loader=PyPDFLoader("uploaded_files.pdf")
             docs = loader.load()
             documents.extend(docs)
 
-        #split and create embedding for the documents
-        text_splitter= RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
-        splits=text_splitter.split_documents(documents)
-        vectorstore = Chroma.from_documents(documents=splits ,embedding = embedding)
-        retriever = vectorstore.as_retriever()
+    #split and create embedding for the documents
+    text_splitter= RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
+    splits=text_splitter.split_documents(documents)
+    vectorstore = Chroma.from_documents(documents=splits ,embedding = embedding)
+    retriever = vectorstore.as_retriever()
 
 
-    contextualie_q_system_prompt = (
-        """ given a chat history and the latest user question 
-        which might reference context in the chat history 
-        formula to standalone application question which can be understood 
-        without chat history, do not answer the question, just reformulate it if needed and otherwise return this."""
+    contextualize_ques_system_prompt = (
+        """ Given a chat history and the latest user question which might 
+        reference context in that chat history , 
+        formulate a standaline question which can be understood without that
+        chat history.
 
+        Do not answer the question.
+
+        if the question is already standalone 
+        return it unchanged.""" 
     )
 
-    contextualie_q_prompt = ChatPromptTemplate.from_messages([
-        ("system",contextualie_q_system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human","{input}"),
+    contextualize_q_prompt = ChatPromptTemplate.from_messages([
+
+        ("system",contextualize_ques_system_prompt),
+        
+        (
+        "human",""" conversation Chat history  : {chat_history}
+                    current question           : {input}   
+                """
+        )
 
     ])
+    
+    #question Rewritter for reframming the contexual aware question 
+    # Understand/rewrite the question.
 
-    history_aware_retriever = create_history_aware_retriever(llm,retriever, contextualie_q_system_prompt)
+    question_rewritter= (
+        contextualize_q_prompt 
+        | llm 
+        | StrOutputParser() 
+        )
 
     #asnwer question
 
     system_prompt = (
 
         """
-        you are an assistant for the question answer task.
+        You're an assistant for question answering.
+        use the following retrieved context to answer the question.
+        if you dont know the answer, say that you dont know.
 
-        Use the following pieces of retrieve context to answer the question.
+        keep the answer concise.
 
-        If you don't know the answer, say that you don't know.
-
-        Use three sentence maximum and keep the answer concise.
-        "\n\n"
-        "{context}"
+        Retrieved context : {context}  
         """
     )
 
     qa_prompt = ChatPromptTemplate.from_messages(
         [
-            ("system",system_prompt),
-            MessagesPlaceholder("chat_history"),
-            ("human","{input}"),
+            ("system",    system_prompt),
+            
+            ("human", """ Chat history     : {chat_history}
+                          Current question : {input}
+            """)
         
         ]
     )
 
-    question_answer_chain=create_stutt_documents_chain(llm,qa_prompt)
-    rag_chain=create_retrieval_chain(history_aware_retriever,question_answer_chain)
+    question_answer_chain=(
+        qa_prompt
+        | llm
+        | StrOutputParser()
+        )
+
+    #Combining the question rewritter as well the question answer chain 
+    Rag_chain= (question_rewritter | question_answer_chain)
 
     def get_session_history(session:str)->BaseChatMessageHistory:
         if session_id not in st.session_state.store:
@@ -151,6 +175,6 @@ if api_key:
         st.success("assistant:", response["answer"])
         st.write("chat history", session_history.messages)
 
-    else :
-        st.warning("please enter the groq api key ")
+else :
+    st.warning("please enter the groq api key ")
         
