@@ -72,14 +72,16 @@ if api_key:
     documents= []
     #process uploaded pdf
     for file in files:
+        
+        file_path = file.name
 
-        with open("uploaded_files.pdf","wb") as f:
+        with open(file_path, "wb") as f:
             f.write(file.getbuffer())
     
 
-            loader=PyPDFLoader("uploaded_files.pdf")
-            docs = loader.load()
-            documents.extend(docs)
+        loader=PyPDFLoader("uploaded_files.pdf")
+        docs = loader.load()
+        documents.extend(docs)
 
     #split and create embedding for the documents
     text_splitter= RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
