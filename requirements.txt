@@ -22,5 +22,5 @@ langchain_tavily
 
 
 #for mcp 
-langchain-mcp-adapter
+langchain-mcp-adapters
 mcp
