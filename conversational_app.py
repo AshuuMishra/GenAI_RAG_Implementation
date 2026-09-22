@@ -48,12 +48,12 @@ embedding = HuggingFaceEmbeddings(
 )
 
 #STREAMLIT APP SETUP
-st.title("Conversational RAG with PDF upload and chat history")
+st.title("MARIA'S Conversational RAG APP 🐇🤍")
 
 st.write("Upload a PDF and chat with its content")
 
 #input thr groq api key
-api_key = st.text_input("Enter your groq api Key", type ="password")
+api_key = st.text_input("Stupid Maira , say I Love You 💋💓", type ="password")
 
 files = st.file_uploader("choose a pdf file", type="pdf",accept_multiple_files=True)
 
