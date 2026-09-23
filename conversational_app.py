@@ -40,12 +40,14 @@ os.environ["LANGCHAIN_TRACING_V2"]="TRUE"
 os.environ["LANGCHAIN_PROJECT"]="RAG Document Q&A with GroqAPI"
 
 
-#embedding models
-embedding = HuggingFaceEmbeddings(
-    # model_name='all-MiniLM-L6-v2'
-    model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+#cahe embedding models to save disk and runtime storage
+@st.cache_resource
+def get_embedding():
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    )
 
-)
+embedding = get_embedding()
 
 #STREAMLIT APP SETUP
 st.title("MARIA'S Conversational RAG APP 🐇🤍")
