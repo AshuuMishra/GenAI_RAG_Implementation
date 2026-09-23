@@ -12,6 +12,8 @@ sentence_transformers
 faiss-cpu
 torchvision
 pypdf
+arxiv
+wikipedia
 
 #chabot with langgraph
 langgraph
