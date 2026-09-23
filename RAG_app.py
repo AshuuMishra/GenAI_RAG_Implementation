@@ -47,17 +47,33 @@ prompt = ChatPromptTemplate.from_template(
 
 )
 
+#will upload the pdf instead of manually providing 
+file=st.file_uploader(label="upload a file",type=['pdf'],accept_multiple_files=False)
+
 def create_vectore_embedding():
-    if "vector" not in st.session_state:
-        st.session_state.embedding = HuggingFaceEmbeddings()
+    if "vector" not in st.session_state: #st.session_state Store the vector object in the current Streamlit session.
+        
+        st.session_state.embedding = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+        )
+
+
+        if file is not None:
+            with open("uploaded_file.pdf","wb") as f:
+                f.write(file.getbuffer())
+
         # st.session_state.loader = PyPDFDirectoryLoader(r"C:\Users\CloudJournee\Desktop\python\python\langchain_update\GenAI_RAG_Implementation\attention.pdf")  #data ingestion step
-        st.session_state.loader = PyPDFLoader(r"C:\Users\CloudJournee\Desktop\python\python\langchain_update\GenAI_RAG_Implementation\attention.pdf")  #data ingestion step
+        st.session_state.loader = PyPDFLoader("uploaded_file.pdf")  #data ingestion step
+
         st.session_state.docs = st.session_state.loader.load()  #document loader
         st.session_state.text_splitter=RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
         st.session_state.final_documents=st.session_state.text_splitter.split_documents(st.session_state.docs[:50])
+        
         st.write("Number of loaded pages:", len(st.session_state.docs))
         st.write("Number of chunks:", len(st.session_state.final_documents))
+        
         st.session_state.vector=FAISS.from_documents(st.session_state.final_documents,st.session_state.embedding)
+        
 
 
 user_prompt = st.text_input("Enter your query from the document")
@@ -78,7 +94,9 @@ if user_prompt:
             "input" : RunnablePassthrough()
         
         }
-        | prompt | llm | StrOutputParser()
+        | prompt 
+        | llm 
+        | StrOutputParser()
     )
 
     start = time.process_time()
@@ -88,16 +106,21 @@ if user_prompt:
     st.write(response)
 
 
-# user_prompt: string
-#        ↓
-#        ├── retriever → context
-#        │
-#        └── RunnablePassthrough() → input
-#                          ↓
-#                        prompt
-#                          ↓
-#                          llm
-#                          ↓
-#                   StrOutputParser()
-#                          ↓
-#                     string answer
+# PHASE 2 — Question answering (work flow)
+# ────────────────────────────────
+
+# User Question
+#       ↓
+# RunnablePassthrough
+#       ↓
+# Retriever ─────→ FAISS ─────→ Relevant chunks
+#       │
+#       └──────────────────────────────┐
+#                                      ↓
+#                               ChatPromptTemplate
+#                                      ↓
+#                                   ChatGroq
+#                                      ↓
+#                               StrOutputParser
+#                                      ↓
+#                                   Answer
