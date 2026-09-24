@@ -14,6 +14,7 @@ torchvision
 pypdf
 arxiv
 wikipedia
+sqlite3
 
 #chabot with langgraph
 langgraph
