@@ -27,3 +27,8 @@ langchain_tavily
 #for mcp 
 langchain-mcp-adapters
 mcp
+
+# summarization
+youtube_transcript_api
+validators
+unstructured
