@@ -77,7 +77,7 @@ Content:
 
 """
 
-prompt =PromptTemplate(template=prompt_template,input_variables=['text'],verbose=True)
+prompt =PromptTemplate(template=prompt_template,input_variables=['text'])
 
 if st.button("Summarise the content from YT or website "):
     #valudate the all the input 
